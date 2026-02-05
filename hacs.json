@@ -1,0 +1,7 @@
+{
+  "name": "Mealie Card",
+  "render_readme": true,
+  "filename": "mealie-card.js",
+  "content_in_root": true,
+  "homeassistant": "2025.11.0"
+}
