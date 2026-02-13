@@ -1,6 +1,7 @@
 {
-  "name": "Mealie Card",
+  "name": "Mealie Recipe Card",
   "render_readme": true,
-  "content_in_root": false,
+  "filename": "mealie-recipe-cards.js",
+  "content_in_root": true,
   "homeassistant": "2025.11.0"
 }
