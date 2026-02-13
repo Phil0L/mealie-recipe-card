@@ -1,4 +1,4 @@
-class MealieCard extends HTMLElement {
+class MealieRecipeCard extends HTMLElement {
 
   static getConfigForm() {
     return {
@@ -107,16 +107,16 @@ class MealieCard extends HTMLElement {
         // Optional: Log validation issues but don't throw to keep visual editor available
         // This allows users to fix invalid configs via the visual editor
         if (!config.mealie_instance) {
-          console.warn("Mealie Card: The Mealie instance is required");
+          console.warn("Mealie Recipe Card: The Mealie instance is required");
           return;
         }
         if (!config.recipe_id) {
-          console.warn("Mealie Card: The recipe ID is required");
+          console.warn("Mealie Recipe Card: The recipe ID is required");
           return;
         }
         const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (!uuidPattern.test(config.recipe_id)) {
-          console.warn("Mealie Card: The recipe ID must be a valid UUID");
+          console.warn("Mealie Recipe Card: The recipe ID must be a valid UUID");
           return;
         }
       }
@@ -269,7 +269,7 @@ class MealieCard extends HTMLElement {
    * @param {Object} hass - Home Assistant object
    */
   set hass(hass) {
-    console.log("Mealie Card: Setting hass instance");
+    console.log("Mealie Recipe Card: Setting hass instance");
     this._hass = hass;
     if (this.skeleton) {
       this.render();
@@ -284,7 +284,7 @@ class MealieCard extends HTMLElement {
           this.recipe_loading = false;
           return;
         }
-        console.log("Mealie Card: Loaded recipe", recipe);
+        console.log("Mealie Recipe Card: Loaded recipe", recipe);
         this.recipe_loading = false;
         this.recipe = recipe;
         this.render();
@@ -309,7 +309,7 @@ class MealieCard extends HTMLElement {
     this.skeleton = config.mealie_instance === "none";
 
     if (this.skeleton) {
-      console.log("Mealie Card: Skeleton mode enabled");
+      console.log("Mealie Recipe Card: Skeleton mode enabled");
       this.config = config;
       this.recipe = {
         id: config.recipe_id,
@@ -340,12 +340,12 @@ class MealieCard extends HTMLElement {
 
   async _async_get_recipe(instance, recipe_id) {
     if (this.skeleton) {
-      console.log("Mealie Card: Skeleton mode enabled, skipping recipe load");
+      console.log("Mealie Recipe Card: Skeleton mode enabled, skipping recipe load");
       return;
     }
 
     if (!this._hass) {
-      console.error("Mealie Card: Home Assistant instance not available");
+      console.error("Mealie Recipe Card: Home Assistant instance not available");
       return;
     }
 
@@ -365,11 +365,11 @@ class MealieCard extends HTMLElement {
         true,
         true
       );
-      //console.log(`Mealie Card: Called service ${domain}.${service}`, serviceData);
-      //console.log(`Mealie Card: Service response:`, response);
+      //console.log(`Mealie Recipe Card: Called service ${domain}.${service}`, serviceData);
+      //console.log(`Mealie Recipe Card: Service response:`, response);
       return response.response.recipe;
     } catch (error) {
-      console.error(`Mealie Card: Failed to call service ${domain}.${service}:`, error);
+      console.error(`Mealie Recipe Card: Failed to call service ${domain}.${service}:`, error);
     }
   }
 
@@ -402,13 +402,13 @@ class MealieCard extends HTMLElement {
 
     if (dblClick && config.double_tap_action) {
       actionConfig = config.double_tap_action;
-      console.log("Mealie Card: Double tap action triggered", actionConfig);
+      console.log("Mealie Recipe Card: Double tap action triggered", actionConfig);
     } else if (hold && config.hold_action) {
       actionConfig = config.hold_action;
-      console.log("Mealie Card: Hold action triggered", actionConfig);
+      console.log("Mealie Recipe Card: Hold action triggered", actionConfig);
     } else if (!hold && config.tap_action) {
       actionConfig = config.tap_action;
-      console.log("Mealie Card: Tap action triggered", actionConfig);
+      console.log("Mealie Recipe Card: Tap action triggered", actionConfig);
     }
 
     if (!actionConfig) {
@@ -529,12 +529,12 @@ class MealieCard extends HTMLElement {
 
 
 
-customElements.define("mealie-card", MealieCard);
+customElements.define("mealie-recipe-card", MealieRecipeCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "mealie-card",
-  name: "Mealie Card",
+  type: "mealie-recipe-card",
+  name: "Mealie Recipe Card",
   description: "Zeigt ein Rezept von Mealie an.",
   preview: true,
 });
