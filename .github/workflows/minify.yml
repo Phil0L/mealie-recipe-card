@@ -9,9 +9,15 @@ jobs:
         with:
           ref: ${{ github.ref }}
         
-      - uses: actions/setup-node@v6
+      - name: Setup node
+        uses: actions/setup-node@v6
         with:
           node-version: 20
+
+      - name: Create new folder
+        run: |
+          rm -rf dist
+          mkdir dist
           
       - name: Bundle & Minify folder
         run: |
