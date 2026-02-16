@@ -13,14 +13,9 @@ jobs:
         with:
           node-version: 20
           
-      - name: Install
-        run: npm install
-        
-      - name: Install uglify-js
-        run: npm install uglify-js -g
-
-      - name: Minify
-        run: uglifyjs mealie-recipe.cards.js  -o output.js -c -m
+      - name: Bundle & Minify folder
+        run: |
+          npx uglify-js cards/*.js -o dist/bundle.min.js -c -m
 
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
