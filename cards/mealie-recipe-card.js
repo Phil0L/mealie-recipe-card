@@ -152,7 +152,7 @@ class MealieRecipeCard extends HTMLElement {
     if (!this.content){
       this.innerHTML = `
         <ha-card style="cursor: pointer; overflow: hidden;">
-          <div class="card-content fit-rows" style="padding: 0px; ${this.skeleton ? 'height: 200px;' : ''}"></div>
+          <div class="card-content fit-rows" style="padding: 0px; ${this.config.custom_height ? `height: ${this.config.custom_height};` : this.skeleton ? 'height: 200px;' : ''}"></div>
         </ha-card>
       `;
       this.content = this.querySelector(".card-content");
@@ -161,7 +161,7 @@ class MealieRecipeCard extends HTMLElement {
     if (this.recipe || this.skeleton) {
       this.content.innerHTML = `
         <div class="recipe" id="recipe_${this.config.recipe_id}" style="width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column;">
-        <div class="image" style="width: 100%; height: -webkit-fill-available; background: url('${this._get_image_url()}') no-repeat center center / cover;"></div>
+        <div class="image" style="width: 100%; height: -webkit-fill-available; flex-grow: 1; background: url('${this._get_image_url()}') no-repeat center center / cover;"></div>
         <div class="recipe-details" style="padding-left: 0px; padding-right: 0px; padding-bottom: 8px; width: 100%;">
           <h2 slot="primary" class="title" style="margin: 0; font-size: var(--ha-font-size-m); font-weight: var(--ha-font-weight-medium); padding: 0px 16px; margin-top: 8px;">${this.recipe.name}</h2>
           <div class="rating prep-time tags" style="display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; padding: 0px 16px;">
@@ -335,7 +335,7 @@ class MealieRecipeCard extends HTMLElement {
 
     // Store validated config
     this.config = config;
-
+    console.log("Mealie Recipe Card: Configuration set", this.config);
   }
 
   async _async_get_recipe(instance, recipe_id) {
@@ -385,7 +385,7 @@ class MealieRecipeCard extends HTMLElement {
    * @returns {number} Card size
    */
   getCardSize() {
-    return 4;
+    return 10;
   }
 
   getGridOptions() {
