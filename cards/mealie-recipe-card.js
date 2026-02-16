@@ -151,8 +151,8 @@ class MealieRecipeCard extends HTMLElement {
 
     if (!this.content){
       this.innerHTML = `
-        <ha-card style="cursor: pointer; overflow: hidden;">
-          <div class="card-content fit-rows" style="padding: 0px; ${this.config.custom_height ? `height: ${this.config.custom_height};` : this.skeleton ? 'height: 200px;' : ''}"></div>
+        <ha-card style="cursor: pointer; overflow: hidden; ${this.config.hide_border ? 'border: none; box-shadow: none; ' : ''}">
+          <div class="card-content ${this.skeleton ? '' : 'card'} fit-rows" style="padding: 0px; ${this.config.custom_height ? `height: ${this.config.custom_height};` : this.skeleton ? 'height: 200px;' : ''}"></div>
         </ha-card>
       `;
       this.content = this.querySelector(".card-content");
@@ -362,7 +362,7 @@ class MealieRecipeCard extends HTMLElement {
         service,
         serviceData,
         {},
-        true,
+        false,
         true
       );
       //console.log(`Mealie Recipe Card: Called service ${domain}.${service}`, serviceData);

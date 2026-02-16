@@ -208,9 +208,9 @@ class MealieDetailCard extends HTMLElement {
 
     if (!this.content){
       this.innerHTML = `
-        <ha-card class="fit-rows recipe" style="cursor: pointer; overflow: hidden; display: flex; flex-direction: column; width: 100%">
+        <ha-card class="${this.skeleton ? '' : 'card'} fit-rows recipe" style="cursor: pointer; overflow: hidden; display: flex; flex-direction: column; width: 100% ${this.config.hide_border ? 'border: none; box-shadow: none; ' : ''}">
           <h1 class="card-header" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 32px;">${this.skeleton ? 'Rezeptname' : this.recipe.name}</h1>
-          <div class="card-content" style="padding: 0px; width: 100%; flex-basis: -webkit-fill-available; ${this.config.custom_height ? `max-height: calc(${this.config.custom_height} - 48px);` : this.skeleton ? 'max-height: 152px;' : ''}"></div>
+          <div class="card-content" style="padding: 0px; width: 100%; flex-basis: -webkit-fill-available; ${this.config.custom_height ? `height: calc(${this.config.custom_height} - 48px);` : this.skeleton ? 'height: 152px;' : 'max-height: calc(100% - 48px);'}"></div>
         </ha-card>
       `;
       this.content = this.querySelector(".card-content");
@@ -658,15 +658,16 @@ class MealieDetailCard extends HTMLElement {
     };
 
     try {
+      console.log(`Mealie Detail Card: Calling service ${domain}.${service}`, serviceData);
       const response = await this._hass.callService(
         domain,
         service,
         serviceData,
         {},
-        true,
+        false,
         true
       );
-      //console.log(`Mealie Detail Card: Called service ${domain}.${service}`, serviceData);
+
       //console.log(`Mealie Detail Card: Service response:`, response);
       return response.response.recipe;
     } catch (error) {
