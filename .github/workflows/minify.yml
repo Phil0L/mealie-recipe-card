@@ -1,26 +1,20 @@
-name: Minify Workflow
-on:
-  push:
-    branches: [ main ]
+on: [push]
 
 jobs:
-  build:
+  minify:
     runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.ref }}
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Job for Minify-JS
-      - name: Minify-JS Action
-        uses: jossydevers/minify-js@v1.0.0
+      - name: Minify
+        uses: nizarmah/auto-minify@v3
         with:
-          directory: 'mealie-recipe-cards.js' # (OPTIONAL)
-          output: 'minify/out/' # (OPTIONAL)
-          
-      # Auto-commit to repository
-      - uses: stefanzweifel/git-auto-commit-action@v4
+          directory: 'cards'
+          output: 'out'
+          overwrite: true
+
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'Minify-JS : Commit Pipeline'
-          branch: ${{ github.ref }}
+          commit_message: "bot: Add auto minified files"
