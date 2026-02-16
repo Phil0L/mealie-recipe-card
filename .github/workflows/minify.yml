@@ -11,10 +11,10 @@ jobs:
         
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: 20
           
       - name: Install
-        run: npm ci
+        run: npm install
         
       - name: Install uglify-js
         run: npm install uglify-js -g
