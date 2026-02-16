@@ -208,7 +208,7 @@ class MealieDetailCard extends HTMLElement {
 
     if (!this.content){
       this.innerHTML = `
-        <ha-card class="card fit-rows recipe" style="cursor: pointer; overflow: hidden; display: flex; flex-direction: column; width: 100%">
+        <ha-card class="fit-rows recipe" style="cursor: pointer; overflow: hidden; display: flex; flex-direction: column; width: 100%">
           <h1 class="card-header" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 32px;">${this.skeleton ? 'Rezeptname' : this.recipe.name}</h1>
           <div class="card-content" style="padding: 0px; width: 100%; flex-basis: -webkit-fill-available; max-height: calc(100% - 48px);"></div>
         </ha-card>

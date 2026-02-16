@@ -152,7 +152,7 @@ class MealieRecipeCard extends HTMLElement {
     if (!this.content){
       this.innerHTML = `
         <ha-card style="cursor: pointer; overflow: hidden;">
-          <div class="card-content card fit-rows" style="padding: 0px; ${this.skeleton ? 'height: 200px;' : ''}"></div>
+          <div class="card-content fit-rows" style="padding: 0px; ${this.skeleton ? 'height: 200px;' : ''}"></div>
         </ha-card>
       `;
       this.content = this.querySelector(".card-content");
