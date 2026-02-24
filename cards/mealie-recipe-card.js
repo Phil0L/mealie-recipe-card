@@ -143,7 +143,7 @@ class MealieRecipeCard extends HTMLElement {
    * Standard HA pattern: Use shouldUpdate to prevent unnecessary re-renders
    */
   shouldUpdate(changedProps) {
-    return this.recipe === undefined || this.recipe.id !== this.config.recipe_id || this.skeleton;
+    return this.recipe === undefined || this.recipe.id !== this.config.recipe_id || this.dummy;
   }
 
   render() {
@@ -152,13 +152,13 @@ class MealieRecipeCard extends HTMLElement {
     if (!this.content){
       this.innerHTML = `
         <ha-card style="cursor: pointer; overflow: hidden; ${this.config.hide_border ? 'border: none; box-shadow: none; ' : ''}">
-          <div class="card-content ${this.skeleton ? '' : 'card'} fit-rows" style="padding: 0px; ${this.config.custom_height ? `height: ${this.config.custom_height};` : this.skeleton ? 'height: 200px;' : ''}"></div>
+          <div class="card-content ${this.dummy ? '' : 'card'} fit-rows" style="padding: 0px; ${this.config.custom_height ? `height: ${this.config.custom_height};` : this.dummy ? 'height: 200px;' : ''}"></div>
         </ha-card>
       `;
       this.content = this.querySelector(".card-content");
     }
 
-    if (this.recipe || this.skeleton) {
+    if (this.recipe || this.dummy) {
       this.content.innerHTML = `
         <div class="recipe" id="recipe_${this.config.recipe_id}" style="width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column;">
         <div class="image" style="width: 100%; height: -webkit-fill-available; flex-grow: 1; background: url('${this._get_image_url()}') no-repeat center center / cover;"></div>
@@ -185,7 +185,7 @@ class MealieRecipeCard extends HTMLElement {
           </div>
         </div>
       `;
-      if (!this.skeleton) {
+      if (!this.dummy) {
         this.apply_event_handlers();
       }
     } else if (this.recipe_loading) {
@@ -269,27 +269,14 @@ class MealieRecipeCard extends HTMLElement {
    * @param {Object} hass - Home Assistant object
    */
   set hass(hass) {
-    console.log("Mealie Recipe Card: Setting hass instance");
-    this._hass = hass;
-    if (this.skeleton) {
-      this.render();
-      return;
-    }
 
-    // Load recipe if not already loaded
-    if (!this.recipe && !this.recipe_loading) {
-      this.recipe_loading = true;
-      this._async_get_recipe(this.config.mealie_instance, this.config.recipe_id).then((recipe) => {
-        if (!recipe) {
-          this.recipe_loading = false;
-          return;
-        }
-        console.log("Mealie Recipe Card: Loaded recipe", recipe);
-        this.recipe_loading = false;
-        this.recipe = recipe;
-        this.render();
-      });
-    }
+    this._hass = hass;
+
+    // render skeleton
+    this.render();
+
+    // Load recipe then render again
+    this._async_load_render();
   }
 
   /**
@@ -306,18 +293,29 @@ class MealieRecipeCard extends HTMLElement {
       throw new Error("Invalid configuration: config is required");
     }
 
-    this.skeleton = config.mealie_instance === "none";
+    this.dummy = !config || config.mealie_instance === "none";
+    this.skeleton = !this.dummy || !this.recipe || this.recipe.recipe_id < 0;
 
-    if (this.skeleton) {
-      console.log("Mealie Recipe Card: Skeleton mode enabled");
-      this.config = config;
+    if (this.dummy) {
+      //console.log("Mealie Recipe Card: dummy mode enabled");
+      this.config = config || {};
       this.recipe = {
-        id: config.recipe_id,
-        name: "name",
+        recipe_id: config.recipe_id,
+        name: "Name",
         rating: 4,
         total_time: "45 min"
       }
       return;
+    }
+
+    if (this.skeleton) {
+      //console.log("Mealie Recipe Card: skeleton mode enabled");
+      this.recipe = {
+        recipe_id: -2,
+        name: "...",
+        rating: 0,
+        total_time: ""
+      }
     }
 
     if (!config.mealie_instance) {
@@ -335,26 +333,109 @@ class MealieRecipeCard extends HTMLElement {
 
     // Store validated config
     this.config = config;
-    console.log("Mealie Recipe Card: Configuration set", this.config);
+    //console.log("Mealie Recipe Card: Configuration set", this.config);
   }
 
-  async _async_get_recipe(instance, recipe_id) {
+  async _async_load_render() {
+    this._async_load_recipe(this.config.recipe_id).then(() => {
+      this.render();
+    });
+  }
+
+  async _async_load_recipe(recipe_id) {
+
+    if (this.recipe && this.recipe.recipe_id === recipe_id) {
+      //console.log("Mealie Recipe Card: Recipe already loaded");
+      return this.recipe;
+    }
+
+    if (this.dummy) {
+      //console.log("Mealie Recipe Card: dummy mode enabled, skipping loading");
+      return this.recipe;
+    }
+
     if (this.skeleton) {
-      console.log("Mealie Recipe Card: Skeleton mode enabled, skipping recipe load");
-      return;
+      //console.log("Mealie Recipe Card: skeleton mode enabled");
     }
 
     if (!this._hass) {
       console.error("Mealie Recipe Card: Home Assistant instance not available");
+      return this.recipe;
+    }
+
+    this.recipe_loading = true;
+    await this._async_preload_recipes();
+
+    if (this.preloaded && this.preloaded[recipe_id]) {
+      this.recipe = this.preloaded[recipe_id];
+      this.recipe_loading = false;
+      this.skeleton = false;
+      return this.recipe;
+    }
+
+    if (this.solo_request_allowed && this.preloaded && !this.preloaded[recipe_id]) {
+      this.recipe = await this._async_request_recipe(recipe_id);
+      this.recipe_loading = false;
+      this.skeleton = false;
+      return this.recipe;
+    }
+  }
+
+  async _async_preload_recipes() {
+    if (!this._hass) {
+      console.error("Mealie Recipe Card: Home Assistant instance not available");
+      this.solo_request_allowed = false;
+      return;
+    }
+
+    if (window.mealie && window.mealie.recipes && Object.keys(window.mealie.recipes).length > 0) {
+      //console.log("Mealie Recipe Card: Recipes already preloaded");
+      this.preloaded = window.mealie.recipes;
+      this.solo_request_allowed = true;
+      return;
+    }
+
+    if (window.mealie && window.mealie.loading) {
+      //console.log("Mealie Recipe Card: Already loading recipes, waiting for completion");
+      window.mealie.listeners = window.mealie.listeners || [];
+      window.mealie.listeners.push(() => this._async_load_render());
+      this.solo_request_allowed = false;
+      return;
+    }
+
+    window.mealie = window.mealie || {};
+    window.mealie.loading = true;
+    window.mealie.recipes = window.mealie.recipes || {};
+
+    const recipes_array = await this._async_request_recipes() || [];
+    const recipes_dict = Object.fromEntries(recipes_array.map(recipe => [recipe.recipe_id, recipe]));
+    window.mealie.recipes = Object.assign(window.mealie.recipes, recipes_dict);
+    window.mealie.listeners.forEach(listener => listener());
+    window.mealie.listeners = [];
+    window.mealie.loading = false;
+    this.preloaded = window.mealie.recipes;
+    this.solo_request_allowed = true;
+  }
+
+  async _async_request_recipe(recipe_id) {
+    if (!this._hass) {
+      console.error("Mealie Recipe Card: Home Assistant instance not available");
+      return;
+    }
+
+    if (!this.config.mealie_instance) {
+      console.error("Mealie Recipe Card: No Mealie instance configured");
       return;
     }
 
     const domain = "mealie";
     const service = "get_recipe";
     const serviceData = {
-      config_entry_id: instance,
+      config_entry_id: this.config.mealie_instance,
       recipe_id: recipe_id
     };
+
+    //console.log(`Mealie Recipe Card: Calling service ${domain}.${service}`, serviceData);
 
     try {
       const response = await this._hass.callService(
@@ -365,7 +446,6 @@ class MealieRecipeCard extends HTMLElement {
         false,
         true
       );
-      //console.log(`Mealie Recipe Card: Called service ${domain}.${service}`, serviceData);
       //console.log(`Mealie Recipe Card: Service response:`, response);
       return response.response.recipe;
     } catch (error) {
@@ -373,8 +453,44 @@ class MealieRecipeCard extends HTMLElement {
     }
   }
 
+  async _async_request_recipes() {
+    if (!this._hass) {
+      console.error("Mealie Recipe Card: Home Assistant instance not available");
+      return;
+    }
+
+    if (!this.config.mealie_instance) {
+      console.error("Mealie Recipe Card: No Mealie instance configured");
+      return;
+    }
+
+    const domain = "mealie";
+    const service = "get_recipes";
+    const serviceData = {
+      config_entry_id: this.config.mealie_instance,
+      result_limit: 100
+    };
+
+    //console.log(`Mealie Recipe Card: Calling service ${domain}.${service}`, serviceData);
+
+    try {
+      const response = await this._hass.callService(
+        domain,
+        service,
+        serviceData,
+        {},
+        false,
+        true
+      );
+      //console.log(`Mealie Recipe Card: Service response:`, response);
+      return response.response.recipes.items;
+    } catch (error) {
+      console.error(`Mealie Recipe Card: Failed to call service ${domain}.${service}:`, error);
+    }
+  }
+
   _get_image_url() {
-    if (this.skeleton) {
+    if (this.dummy) {
       return "http://picsum.photos/id/292/3852/2556";
     }
     return `${this.config.mealie_host || "http://localhost:9000"}/api/media/recipes/${this.config.recipe_id}/images/min-original.webp`;
@@ -402,13 +518,13 @@ class MealieRecipeCard extends HTMLElement {
 
     if (dblClick && config.double_tap_action) {
       actionConfig = config.double_tap_action;
-      console.log("Mealie Recipe Card: Double tap action triggered", actionConfig);
+      //console.log("Mealie Recipe Card: Double tap action triggered", actionConfig);
     } else if (hold && config.hold_action) {
       actionConfig = config.hold_action;
-      console.log("Mealie Recipe Card: Hold action triggered", actionConfig);
+      //console.log("Mealie Recipe Card: Hold action triggered", actionConfig);
     } else if (!hold && config.tap_action) {
       actionConfig = config.tap_action;
-      console.log("Mealie Recipe Card: Tap action triggered", actionConfig);
+      //console.log("Mealie Recipe Card: Tap action triggered", actionConfig);
     }
 
     if (!actionConfig) {
